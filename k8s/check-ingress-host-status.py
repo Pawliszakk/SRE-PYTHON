@@ -40,7 +40,7 @@ def check_sites(ingress_hosts):
             print(f"CHECKING {host} --> {res.status_code}")
 
             if res.status_code != 200:
-                bad_sites.append({host})
+                bad_sites.append(host)
             else:
                 ok_sites.append(host)
 
