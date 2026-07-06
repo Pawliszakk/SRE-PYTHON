@@ -1,5 +1,0 @@
-linux01 Running
-linux02 Stopped
-linux03 Running
-linux04 Stopped
-linux05 Running
