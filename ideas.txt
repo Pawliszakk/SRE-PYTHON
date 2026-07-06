@@ -1,10 +1,7 @@
-HTTP health check aplikacji (już masz)
-Pods nie w stanie Running — wyślij alert
-PVC bliskie pełności (przez kubectl)
-Backup etcd — wrapper z datą i rotacją starych plików
-Sprawdź czy certy SSL nie wygasają za <30 dni
-Parsuj logi Ansible i pokaż tylko failed taski
-Raport: ile podów per namespace w klastrze
-Sprawdź czy wszystkie węzły RKE2 są Ready
-Wyślij powiadomienie na Teams/Slack jeśli coś z powyższych padnie
-CLI do szybkiego exec do poda po nazwie aplikacji zamiast pełnej nazwy poda
+0.HTTP health check aplikacji 
+1.Pods nie w stanie Running — wyślij alert
+2.PVC bliskie pełności (przez kubectl)
+3.Raport: ile podów per namespace w klastrze
+4.Sprawdź czy wszystkie węzły RKE2 są Ready
+5.Wyślij powiadomienie na Teams/Slack jeśli coś z powyższych padnie
+6.Sprawdź czy certy SSL nie wygasają za <30 dni
