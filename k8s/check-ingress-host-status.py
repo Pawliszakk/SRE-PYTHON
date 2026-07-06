@@ -37,6 +37,7 @@ def check_sites(ingress_hosts):
         try:
             url = f'https://{host}'
             res = requests.get(url, verify=False, timeout=5)
+            
             print(f"CHECKING {host} --> {res.status_code}")
 
             if res.status_code != 200:
