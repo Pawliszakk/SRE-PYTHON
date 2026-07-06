@@ -4,9 +4,9 @@ import json
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-ingress_hosts = []
 
 def get_sites():
+    ingress_hosts = []
     command = ["kubectl","get","ingress","-A","-o","json"]
     
     try:
@@ -26,9 +26,9 @@ def get_sites():
         print(e)
         return
     print(f'Fetched {len(ingress_hosts)} hosts from kubernetes...')
-    check_sites()
+    check_sites(ingress_hosts)
 
-def check_sites():
+def check_sites(ingress_hosts):
     ok_sites = []
     bad_sites = []
 
