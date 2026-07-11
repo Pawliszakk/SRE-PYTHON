@@ -1,36 +1,36 @@
-import subprocess
 import requests
-import json
+from kubernetes import client, config
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
-def get_hosts():
-    ingress_hosts = []
-    command = ["kubectl","get","ingress","-A","-o","json"]
-    
+def get_sites():
+    ingress_hosts = []    
+
     try:
         print("Getting available hosts data from kubernetes api...")
-        response = subprocess.run(command, capture_output=True, text=True)
-        if response.returncode != 0:
-            print("Something went wrong with kubernetes command, terminating...")
-            return 1
-        data = json.loads(response.stdout)
+        config.load_kube_config()
+        configuration = client.Configuration.get_default_copy()
+        configuration.verify_ssl = False
+        client.Configuration.set_default(configuration)
+        networking_v1 = client.NetworkingV1Api()
+        ingresses = networking_v1.list_ingress_for_all_namespaces()
 
-        for ingress in data["items"]:
-            for rules in ingress["spec"]["rules"]:
-                ingress_hosts.append(rules["host"])
+        for ingress in ingresses.items:
+            for rule in ingress.spec.rules:
+                ingress_hosts.append(rule.host)
 
     except Exception as e:
-        print("Something went wrong.")
+        print("Something went wrong with getting hosts data from kubernetes api.")
         print(e)
         return
+    
     print(f'Fetched {len(ingress_hosts)} hosts from kubernetes...')
-    check_hosts(ingress_hosts)
+    check_sites(ingress_hosts)
 
-def check_hosts(ingress_hosts):
-    healthy_hosts = []
-    unhealthy_hosts = []
+def check_sites(ingress_hosts):
+    ok_sites = []
+    bad_sites = []
 
     print("Starting testing...")
     for host in ingress_hosts:
@@ -40,23 +40,21 @@ def check_hosts(ingress_hosts):
             
             print(f"CHECKING {host} --> {res.status_code}")
 
-            checked_host = {"host": host, "status": res.status_code}
             if res.status_code != 200:
-                unhealthy_hosts.append(checked_host)
+                bad_sites.append(host)
             else:
-                healthy_hosts.append(checked_host)
+                ok_sites.append(host)
 
         except Exception as e:
-            checked_host = {"host": host, "status": None, "error": e}
-            unhealthy_hosts.append(checked_host)
+            print(f"Something went wrong with {host}")
+            bad_sites.append(host)
             print(e)
-            
-    print("\n")
-    print('---RESULTS---')
-    print(f"Healthy hosts: {len(healthy_hosts)} | Unhealthy hosts: {len(unhealthy_hosts)}")
 
-    if len(unhealthy_hosts) > 0:
-        print("Printing unhealthy hosts:")
-        for host in unhealthy_hosts:
-            print(f'{host["host"]} {host["error"]}')
-get_hosts()
+    print(f"OK_SITES: {len(ok_sites)}")
+    print(f"BAD_SITES: {len(bad_sites)}")
+
+    if len(bad_sites) > 0:
+        print("PRINTING BAD SITES")
+        for bad_site in bad_sites:
+            print(bad_site)
+get_sites()
