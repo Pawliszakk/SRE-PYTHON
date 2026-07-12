@@ -1,0 +1,1 @@
+1. DRY on generating count values and reports. create separate function to handle logic

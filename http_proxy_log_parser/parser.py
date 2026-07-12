@@ -1,9 +1,11 @@
 import json
 
+
 def parser(log):
 
     try:
         entry = json.loads(log)
+
         return {
             "RequestMethod": entry["RequestMethod"],
             "ClientHost": entry["ClientHost"],
@@ -19,6 +21,5 @@ def parser(log):
             "Duration": entry["Duration"],
             "ServiceName": entry["ServiceName"]
         }
-    except json.JSONDecodeError:
+    except Exception as e:
         return None
-    
