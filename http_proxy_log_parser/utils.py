@@ -13,8 +13,9 @@ def count_by_occurence(log, metric, data_dict):
         data_dict.update({
             my_metric: 1
         })
-        
+
 def show_top_metrics(message, dict_items):
+    print("\n")
     print(message)
     print("-----------------------")
 
@@ -23,7 +24,6 @@ def show_top_metrics(message, dict_items):
         return item[1]
     
     sorted_dict_items = sorted(dict_items.items(), key=get_second_value, reverse=True)
-
     for i,entry in enumerate(sorted_dict_items, start=1):
         if i <= 10:
             print(f'{i}. {entry[0]:<16} | {entry[1]}')

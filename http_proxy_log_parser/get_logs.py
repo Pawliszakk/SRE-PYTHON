@@ -1,6 +1,6 @@
 from connect_to_k8s import connect_to_k8s
 
-def get_logs(ingress_namespace, ingress_labels):
+def get_logs(ingress_namespace, ingress_labels, logs_number):
 
     v1 = connect_to_k8s(ingress_namespace, ingress_labels)
 
@@ -18,7 +18,7 @@ def get_logs(ingress_namespace, ingress_labels):
                     name=pod_name, 
                     namespace=ingress_namespace, 
                     container=container_name, 
-                    tail_lines=100)
+                    tail_lines=logs_number)
 
                 container_logs = logs.strip("b'\"").encode().decode("unicode_escape").splitlines()
 
