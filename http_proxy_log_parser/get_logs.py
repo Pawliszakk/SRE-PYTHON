@@ -8,6 +8,7 @@ def get_logs(ingress_namespace, ingress_labels, logs_number):
         namespace=ingress_namespace, 
         label_selector=ingress_labels)
 
+    all_logs = []
     for pod in pods.items:
         pod_name = pod.metadata.name
 
@@ -21,10 +22,9 @@ def get_logs(ingress_namespace, ingress_labels, logs_number):
                     tail_lines=logs_number)
 
                 container_logs = logs.strip("b'\"").encode().decode("unicode_escape").splitlines()
-
-                return container_logs
+                all_logs.extend(container_logs)
 
             except Exception as e:
                 print(f"Error getting logs for pod {pod_name}, container {container_name}: {e}")
-
+    return all_logs
 
