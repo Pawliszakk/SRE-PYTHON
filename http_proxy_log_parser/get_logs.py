@@ -1,4 +1,5 @@
-from parser import parser
+from log_parser import log_parser
+from utils import show_top_metrics, count_by_occurence
 from connect_to_k8s import connect_to_k8s
 def get_logs():
 
@@ -32,25 +33,11 @@ def get_logs():
 
 
                 for log in container_logs:
-                    parsed_log = parser(log)
+                    parsed_log = log_parser(log)
                     
                     if parsed_log == None:
                         continue
-                    def count_by_occurence(log, metric, data_dict):
-                        my_metric = log[metric]
-                        my_metric_in_data_dict = data_dict.get(my_metric)
 
-                        is_my_metric_in_data_dict = bool(my_metric_in_data_dict)
-
-                        if is_my_metric_in_data_dict:
-                            updated_my_metric = my_metric_in_data_dict + 1
-                            data_dict.update(
-                                {my_metric: updated_my_metric}
-                            )
-                        else:
-                            data_dict.update({
-                                my_metric: 1
-                            })
                     count_by_occurence(parsed_log, "ClientHost", ip_hits)
                     count_by_occurence(parsed_log, "DownstreamStatus", statuses_count)
                     count_by_occurence(parsed_log, "RequestPath", request_path_count)
@@ -58,22 +45,6 @@ def get_logs():
 
             except Exception as e:
                 print(f"Error getting logs for pod {pod_name}, container {container_name}: {e}")
- 
-
-    #IP HITS
-    def show_top_metrics(message, dict_items):
-        print(message)
-        print("-----------------------")
-
-
-        def get_second_value(item):
-            return item[1]
-        
-        sorted_dict_items = sorted(dict_items.items(), key=get_second_value, reverse=True)
-
-        for i,entry in enumerate(sorted_dict_items, start=1):
-            if i <= 10:
-                print(f'{i}. {entry[0]:<16} | {entry[1]}')
 
     show_top_metrics("TOP 10 HIT COUNTS IP...",ip_hits)
     show_top_metrics("TOP 10 STATUS CODES...",statuses_count)

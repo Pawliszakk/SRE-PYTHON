@@ -1,7 +1,7 @@
 import json
 
 
-def parser(log):
+def log_parser(log):
 
     try:
         entry = json.loads(log)
