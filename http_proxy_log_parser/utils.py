@@ -29,3 +29,6 @@ def show_top_metrics(message, dict_items):
                 print(f'{i}. {entry[0]:<20} | {entry[1]}')
     else:
         print("We found no data that met this requirements.")
+
+def from_microseconds_to_seconds(value):
+        return round(value/1000000,2)
