@@ -1,0 +1,1 @@
+Add columns in showing rankings to each value
