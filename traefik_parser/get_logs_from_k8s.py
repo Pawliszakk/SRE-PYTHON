@@ -1,6 +1,6 @@
 from connect_to_k8s import connect_to_k8s
 
-def get_logs(ingress_namespace, ingress_labels, logs_number):
+def get_logs_from_k8s(ingress_namespace, ingress_labels, logs_number):
 
     v1 = connect_to_k8s(ingress_namespace, ingress_labels)
 
@@ -9,9 +9,12 @@ def get_logs(ingress_namespace, ingress_labels, logs_number):
         label_selector=ingress_labels)
 
     all_logs = []
+    
+    number_of_lines_to_get_from_pod = int(logs_number/len(pods.items))
+    
     for pod in pods.items:
         pod_name = pod.metadata.name
-
+        
         for container in pod.spec.containers:
             container_name = container.name
             try:
@@ -19,7 +22,7 @@ def get_logs(ingress_namespace, ingress_labels, logs_number):
                     name=pod_name, 
                     namespace=ingress_namespace, 
                     container=container_name, 
-                    tail_lines=logs_number)
+                    tail_lines=number_of_lines_to_get_from_pod)
 
                 container_logs = logs.strip("b'\"").encode().decode("unicode_escape").splitlines()
                 all_logs.extend(container_logs)

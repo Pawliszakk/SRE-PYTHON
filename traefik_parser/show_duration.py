@@ -1,7 +1,6 @@
 from utils import from_microseconds_to_seconds
 import statistics
 def show_duration(my_data):
-    print("\n")
     
     sorted_all_durations_values = sorted(my_data, reverse=True)
 
@@ -22,3 +21,4 @@ def show_duration(my_data):
     print(f'Requests P99 value: {p99}s')
     print(f'Requests P95 value: {p95}s')
     print(f'Requests P50 value: {p50}s')
+    print("\n")

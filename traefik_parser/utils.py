@@ -15,11 +15,8 @@ def count_by_occurence(log, metric, data_dict):
         })
 
 def show_top_metrics(message, dict_items):
-    print("\n")
     print(message)
     print("-----------------------")
-
-
     def get_second_value(item):
         return item[1]
     if len(dict_items.items()) > 0:
@@ -29,6 +26,8 @@ def show_top_metrics(message, dict_items):
                 print(f'{i}. {entry[0]:<20} | {entry[1]}')
     else:
         print("We found no data that met this requirements.")
+    print("\n")
+
 
 def from_microseconds_to_seconds(value):
         return round(value/1000000,2)
