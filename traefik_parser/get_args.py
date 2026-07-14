@@ -45,12 +45,17 @@ def get_args():
     parser.add_argument('--show-top-request-paths', action='store_true', help='Show top requested paths')
     parser.add_argument('--show-stats', action='store_true', help='Show aggregated stats (p50/p95/p99)')
     parser.add_argument('--show-error-logs', action='store_true', help='Show logs that caused 5xx error code')
+    parser.add_argument('--show-slowest', action='store_true', help='Show slowest endpoints')
     parser.add_argument('--show-all', action='store_true', help='Show all statistics that this tool is capable of...')
     parser.add_argument('--ip', type=str, help='Show statistics for specific ip address')
     parser.add_argument('--status', type=int, help='Show for specific return code status')
     parser.add_argument('--path', type=str, help='Show for specific path')
     parser.add_argument('--host', type=str, help='Show for specific host')
     parser.add_argument('--results-number', type=int, help='Show custom results number in show-top commands', default=default_results_number)
+    parser.add_argument('--slower-than', type=float, help='Show logs slower than this value, in seconds')
+    parser.add_argument('--slower-than-show-path', action='store_true', help='Show path in slower-than mode')
+
+    
 
     args = parser.parse_args()
 

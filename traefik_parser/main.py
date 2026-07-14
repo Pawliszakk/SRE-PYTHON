@@ -4,6 +4,10 @@ from utils import show_top_metrics, count_by_occurence
 from log_parser import log_parser
 from show_duration import show_duration
 from get_args import get_args
+from calculate_slowest_hosts import calculate_slowest_hosts
+from show_slowest_hosts import show_slowest_hosts
+from show_slower_than import show_slower_than
+
 MAX_REASONABLE_DURATION_SECONDS = 60
 MAX_REASONABLE_DURATION = MAX_REASONABLE_DURATION_SECONDS * 1_000_000
 
@@ -16,6 +20,7 @@ def main():
     bad_statuses_count = {}
     request_addr_count = {}
     request_path_count = {}
+    request_times = {}
     all_durations_values = []
     logs = []
 
@@ -78,6 +83,11 @@ def main():
             count_by_occurence(parsed_log, "RequestAddr", request_addr_count)
         if  args.show_top_request_paths:
             count_by_occurence(parsed_log, "RequestPath", request_path_count)
+        if args.show_slowest:
+            calculate_slowest_hosts(parsed_log, request_times)
+        if args.slower_than:
+            show_slower_than(parsed_log,args.slower_than,args.slower_than_show_path)
+
 
     if args.show_top_error_codes:
         for status in statuses_count.items():
@@ -97,6 +107,8 @@ def main():
         show_top_metrics("Request paths...",request_path_count, args.results_number)
     if args.show_stats:
         show_duration(all_durations_values)
+    if args.show_slowest:
+        show_slowest_hosts(request_times)
 
     print("SUMMARY")
     print("-------------------")

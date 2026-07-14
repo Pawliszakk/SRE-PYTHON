@@ -31,3 +31,6 @@ def show_top_metrics(message, dict_items, results_number ):
 
 def from_microseconds_to_seconds(value):
         return round(value/1000000,2)
+
+def from_seconds_to_microseconds(value):
+        return value * 1_000_000
