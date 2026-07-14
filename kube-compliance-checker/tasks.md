@@ -1,0 +1,1 @@
+- Add argparse to choose namespace, severity
