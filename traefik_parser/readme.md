@@ -1,177 +1,60 @@
 # SRE Log Parser CLI
 
-A CLI tool for analyzing HTTP access logs (nginx / Traefik) — a learning project focused on Python for SRE use cases.
+A CLI tool for analyzing Traefik HTTP access logs — a learning project focused on Python for SRE use cases.
 
 ## Goal
 
-Parse and analyze HTTP access logs from the command line, in a way that's genuinely useful when debugging production incidents.
+Parse and analyze Traefik access logs from the command line, in a way that's genuinely useful when debugging production incidents.
 
 ## Input
 
-- Primary source: Traefik JSON access logs (`--accesslog.format=json`) pulled from a production RKE2 cluster.
-- Fallback: nginx/Traefik combined (plain text) log format, for cases where JSON logging isn't available.
-- The parser should support both formats, not just one — this mirrors real-world environments where log format isn't always under your control.
+- ✅ Traefik JSON access logs (`--accesslog.format=json`) pulled live from a production RKE2 cluster via the Kubernetes API.
+- ✅ File input also supported (`--from-file`) for offline analysis of saved logs.
 
-## Features (MVP)
+## Features
 
 ### 1. Parsing
-Parse each log line into a structured record containing:
-- client IP (`ClientAddr` / `ClientHost` in JSON)
-- timestamp (`time`, ISO8601 UTC)
-- HTTP method (`RequestMethod`)
-- path (`RequestPath`)
-- status code (`DownstreamStatus`)
-- response size (`DownstreamContentSize`)
-- duration (`Duration`, in **microseconds** — convert before computing percentiles)
-- service name (`ServiceName`) — useful for aggregating by application (e.g. Nextcloud, JumpServer)
+Parses each log line into a structured record containing:
+- ✅ client IP (`ClientHost`)
+- ✅ timestamp (`time`, ISO8601 UTC)
+- ✅ HTTP method (`RequestMethod`)
+- ✅ path (`RequestPath`)
+- ✅ status code (`DownstreamStatus`)
+- ✅ response size (`DownstreamContentSize`)
+- ✅ duration (`Duration`, in **microseconds** — converted before computing percentiles)
+- ✅ service name (`ServiceName`) — useful for aggregating by application (e.g. Nextcloud, JumpServer)
 
 ### 2. Filtering
-- by HTTP status (e.g. `5xx` only)
-- by time range
-- by IP address
-- by path (substring / regex)
+- ✅ by HTTP status (`--status`)
+- ✅ by IP address (`--ip`)
+- ✅ by path (`--path`) — exact match only, not substring/regex
+- ✅ by host (`--host`)
+- ✅ by time range (`--since` / `--until`)
+- ✅ by minimum duration (`--slower-than`, in seconds)
+- ✅ exclusion filters for noisy traffic (Rancher live-log streaming, `follow=true`, unreasonably long durations)
 
 ### 3. Statistics / aggregations
-- top N IP addresses by request count
-- request count per status code
-- top N most requested endpoints
-- (optional, if response time is present in the log) slowest endpoints
+- ✅ top N IP addresses by request count
+- ✅ request count per status code
+- ✅ top N most requested endpoints
+- ✅ top N 5xx error codes
+- ✅ response time stats: average, median, p50/p95/p99
+- ✅ slowest hosts, ranked by average response time
 
 ### 4. Error handling
-- lines that don't match the expected pattern don't crash the program
-- a summary report at the end shows how many lines failed to parse
+- ✅ lines that don't match the expected pattern don't crash the program
+- ✅ a summary report at the end shows how many lines failed to parse
+- ✅ graceful "no data matched filters" message instead of crashing on empty result sets
 
 ### 5. Output
-- readable table in the terminal
-- optional export to CSV / JSON
+- ✅ readable terminal output via `show_top_metrics`, aligned columns
+- ✅ CSV export for all metrics (`--output-dir`) — top IPs, status codes, error codes, request paths, request addresses, stats, slowest hosts, error logs, per-IP logs
 
 ### 6. CLI
-- input file as a positional argument
-- filter flags (status, IP, path, time range)
-- flag to choose output format
-
-## Usage
-
-```bash
-# Show everything, pulling live from the cluster
-python main.py --show-all
-
-# Show top 20 IPs instead of default 10
-python main.py --show-top-ips --results-number 20
-
-# Analyze a saved log file instead of live cluster
-python main.py --from-file access.log --show-stats
-
-# Filter to a specific status code and print matching logs
-python main.py --status 500 --show-error-logs
-
-# Pull more lines and check top requested paths
-python main.py --lines 5000 --show-top-request-paths
-
-# Check stats for a specific IP address
-python main.py --ip 10.150.13.100 --show-top-ips
-
-# Custom namespace/labels when pulling from a different cluster setup
-python main.py --namespace default --labels app=my-ingress --show-all
-
-# Show requests slower than 10 seconds
-python main.py --slower-than 10
-
-# Show slowest hosts, ranked by average response time
-python main.py --show-slowest
-
-# Filter by a time window (from a saved log file)
-python main.py --from-file access.log --since "2026-07-14 07:00" --until "2026-07-14 12:00" --show-top-request-addr
-```
-
-Run `python main.py --help` for the full list of flags.
+- ✅ `argparse`-based CLI, with filter flags, `--show-all` convenience flag, `--results-number` for top-N size, and usage examples in `--help`
 
 ## Success criteria
 
 Feeding the tool a real production access log produces a report that would genuinely help during incident debugging/analysis.
 
-## Status
-
-🚧 In progress — personal project, being built independently.
-
----
-
-## Progress Checklist
-
-### Input
-
-- [x] ✅ Primary source: Traefik JSON access logs (pulled from K8s API)
-- [x] ✅ Input file support (`--from-file`), decoupled from K8s-only source
-- [ ] ❌ Fallback: nginx/Traefik plain text (combined) format — JSON-only parser for now
-
-### 1. Parsing
-
-- [x] ✅ Client IP (`ClientHost`)
-- [x] ✅ Timestamp (`time`)
-- [x] ✅ HTTP method (`RequestMethod`)
-- [x] ✅ Path (`RequestPath`)
-- [x] ✅ Status code (`DownstreamStatus`)
-- [x] ✅ Response size (`DownstreamContentSize`)
-- [x] ✅ Duration (`Duration`)
-- [x] ✅ Service name (`ServiceName`)
-
-### 2. Filtering
-
-- [x] ✅ By HTTP status (`--status`)
-- [x] ✅ By IP address (`--ip`)
-- [x] ✅ By path (`--path`) — exact match only, not substring/regex yet
-- [x] ✅ By host (`--host`) — bonus, not in original MVP
-- [x] ✅ By time range (`--since` / `--until`)
-- [x] ✅ By minimum duration (`--slower-than`, in seconds) — bonus, not in original MVP
-- [x] ✅ Exclusion filters for noisy traffic (Rancher live-log streaming, `follow=true`, unreasonably long durations)
-
-### 3. Statistics / Aggregations
-
-- [x] ✅ Top N IP addresses by request count (N configurable via `--results-number`)
-- [x] ✅ Request count per status code
-- [x] ✅ Top N most requested endpoints
-- [x] ✅ Top N 5xx error codes
-- [x] ✅ Response time stats: average, median, p50/p95/p99 (global)
-- [x] ✅ Slowest hosts (`--show-slowest`) — average response time ranked per host
-
-### 4. Error Handling
-
-- [x] ✅ Malformed lines don't crash the program
-- [x] ✅ Summary report of failed-to-parse line count
-- [x] ✅ Graceful "no data matched filters" message instead of crashing on empty result sets
-
-### 5. Output
-
-- [ ] ⚠️ Readable terminal output — present, aligned columns via `show_top_metrics`, but no real table headers
-- [ ] ❌ Export to CSV / JSON
-
-### 6. CLI
-
-- [x] ✅ `argparse`-based CLI (`get_args.py`) — namespace, labels, lines, file input, all display/filter flags
-- [x] ✅ Filter flags (status, IP, path, host, time range, min duration)
-- [x] ✅ `--show-all` convenience flag (sets all display flags at once)
-- [x] ✅ `--results-number` to control top-N size
-- [x] ✅ Help text with usage examples (`epilog`)
-- [ ] ❌ Output format flag (CSV/JSON)
-- [ ] ❌ Path filter as substring/regex (currently exact match)
-
-### Summary
-
-| Area | Status |
-|---|---|
-| Core parsing (JSON) | 🟢 Done |
-| Aggregations | 🟢 Done |
-| Error handling | 🟢 Done |
-| CLI interface | 🟢 Done |
-| Filtering (as CLI options) | 🟢 Done |
-| Export | 🔴 Not started |
-| Plain text fallback | 🔴 Not started |
-
-**Overall: ~85-90% of MVP. Core engine, aggregations, full CLI, and time-range/duration filtering are done. Remaining gaps: export, plain text fallback, and path filter as substring/regex.**
-
-### Next steps (priority order)
-
-1. CSV/JSON export
-2. Path filter as substring/regex instead of exact match
-3. Plain text log fallback parser (nginx/Traefik combined format)
-4. Polish: real table headers in terminal output
+See `USAGE.md` for the full flag reference and examples.

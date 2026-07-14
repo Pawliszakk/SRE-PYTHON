@@ -123,7 +123,7 @@ def main():
             generate_csv(ip_hits, args.results_number, args.output_dir,"top_ips")
 
         if  args.show_top_status_codes:
-            generate_csv(statuses_count, args.results_number, args.output_dir,"top_ips")
+            generate_csv(statuses_count, args.results_number, args.output_dir,"top_status_codes")
 
         if  args.show_top_request_addr:
             generate_csv(request_addr_count, args.results_number, args.output_dir,"top_request_addr")
