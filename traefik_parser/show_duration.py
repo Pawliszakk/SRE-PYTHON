@@ -5,9 +5,11 @@ import csv
 def show_duration(my_data,is_csv=False,output_path=None):
 
     sorted_all_durations_values = sorted(my_data, reverse=True)
-
+    if len(sorted_all_durations_values) == 0:
+        print("We did not find any data for specified host.")
+        return    
     average_duration = sum(sorted_all_durations_values)/len(sorted_all_durations_values)
-    
+
     average_duration_in_seconds = from_microseconds_to_seconds(average_duration)
     
     duration_median = from_microseconds_to_seconds(statistics.median(sorted_all_durations_values))

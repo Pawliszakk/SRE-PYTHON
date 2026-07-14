@@ -1,7 +1,7 @@
 from utils import from_microseconds_to_seconds
 import csv
 
-def show_slowest_hosts(my_dict,is_csv,output_path):
+def show_slowest_hosts(my_dict,is_csv=False,output_path=None):
 
     columns = ["host","value_in_seconds"]
 

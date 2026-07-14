@@ -37,4 +37,16 @@ python main.py --from-file access.log --since "2026-07-14 07:00" --until "2026-0
 
 # Export all results to CSV instead of printing to terminal
 python main.py --show-all --output-dir ./results
+
+# Show requests slower than 10 seconds, with path shown
+python main.py --slower-than 10 --slower-than-show-path
+
+# Narrow down to a specific host and check its error logs
+python main.py --host helpdesk-k8s.mw-wheels.com --show-error-logs
+
+# Combine IP and status filters to trace a specific incident
+python main.py --ip 172.20.15.10 --status 500 --show-error-logs
+
+# Check top error codes (4xx/5xx) with a bigger sample size
+python main.py --lines 20000 --show-top-error-codes
 ```

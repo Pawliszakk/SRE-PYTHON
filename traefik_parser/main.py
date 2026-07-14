@@ -156,11 +156,17 @@ def main():
         if args.show_slowest:
             show_slowest_hosts(request_times)
         if args.show_error_logs:
-            for log in error_logs:
-                print(log)
+            if len(error_logs) == 0:
+                print("We did not find any data for specified criteria.")
+            else:
+                for log in error_logs:
+                    print(log)
         if args.ip:
-            for log in custom_ip_logs:
-                print(f"IP: {log["ClientHost"]} {log["RequestAddr"]}{log["RequestPath"]} {log["DownstreamStatus"]}")
+            if len(custom_ip_logs) == 0:
+                print("We did not find any data for specified criteria.")
+            else:
+                for log in custom_ip_logs:
+                    print(f"IP: {log["ClientHost"]} {log["RequestAddr"]}{log["RequestPath"]} {log["DownstreamStatus"]}")
 
     print("SUMMARY")
     print("-------------------")

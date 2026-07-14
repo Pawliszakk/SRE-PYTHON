@@ -9,9 +9,11 @@ def get_logs_from_k8s(ingress_namespace, ingress_labels, logs_number):
         label_selector=ingress_labels)
 
     all_logs = []
-    
-    number_of_lines_to_get_from_pod = int(logs_number/len(pods.items))
-    
+    if len(pods.items) > 0:
+        number_of_lines_to_get_from_pod = int(logs_number/len(pods.items))
+    else:
+        print("We did not find any pods that match given criteria.")
+        raise ValueError("No pods found.")
     for pod in pods.items:
         pod_name = pod.metadata.name
         
