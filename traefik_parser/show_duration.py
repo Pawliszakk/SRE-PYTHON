@@ -2,7 +2,7 @@ from utils import from_microseconds_to_seconds
 import statistics
 import csv
 
-def show_duration(my_data,is_csv,output_path):
+def show_duration(my_data,is_csv=False,output_path=None):
 
     sorted_all_durations_values = sorted(my_data, reverse=True)
 
