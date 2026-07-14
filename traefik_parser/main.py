@@ -1,12 +1,13 @@
 from get_logs_from_k8s import get_logs_from_k8s
 from get_logs_from_file import get_logs_from_file
-from utils import show_top_metrics, count_by_occurence
+from utils import show_top_metrics, count_by_occurence, parse_user_datetime
 from log_parser import log_parser
 from show_duration import show_duration
 from get_args import get_args
 from calculate_slowest_hosts import calculate_slowest_hosts
 from show_slowest_hosts import show_slowest_hosts
 from show_slower_than import show_slower_than
+from datetime import datetime
 
 MAX_REASONABLE_DURATION_SECONDS = 60
 MAX_REASONABLE_DURATION = MAX_REASONABLE_DURATION_SECONDS * 1_000_000
@@ -48,6 +49,14 @@ def main():
             bad_log_count += 1
             continue
         
+        if args.since or args.until:
+            log_dt = datetime.fromisoformat(parsed_log["time"].replace("Z", "+00:00")).replace(tzinfo=None)
+
+            if args.since and log_dt < parse_user_datetime(args.since):
+                continue
+            if args.until and log_dt > parse_user_datetime(args.until):
+                continue
+
         if args.ip:
             if parsed_log["ClientHost"] != args.ip:
                 continue

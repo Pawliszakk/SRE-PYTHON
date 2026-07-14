@@ -51,6 +51,8 @@ def get_args():
     parser.add_argument('--status', type=int, help='Show for specific return code status')
     parser.add_argument('--path', type=str, help='Show for specific path')
     parser.add_argument('--host', type=str, help='Show for specific host')
+    parser.add_argument('--since', type=str, help='Show since specific date time, YYYY-MM-DD or YYYY-MM-DD HH:MM UTC time')
+    parser.add_argument('--until', type=str, help='how until specific date time, YYYY-MM-DD HH:MM UTC time')
     parser.add_argument('--results-number', type=int, help='Show custom results number in show-top commands', default=default_results_number)
     parser.add_argument('--slower-than', type=float, help='Show logs slower than this value, in seconds')
     parser.add_argument('--slower-than-show-path', action='store_true', help='Show path in slower-than mode')

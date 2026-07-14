@@ -2,4 +2,5 @@
 - add custom ip selection to script
 - add fallback or default metric if no args show are provided
 
-1. --show-gr
+--since 
+--until

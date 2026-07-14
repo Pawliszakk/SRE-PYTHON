@@ -1,3 +1,5 @@
+from datetime import datetime
+
 def count_by_occurence(log, metric, data_dict):
     my_metric = log[metric]
     my_metric_in_data_dict = data_dict.get(my_metric)
@@ -34,3 +36,11 @@ def from_microseconds_to_seconds(value):
 
 def from_seconds_to_microseconds(value):
         return value * 1_000_000
+
+def parse_user_datetime(value):
+    for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(value, fmt)
+        except ValueError:
+            continue
+    raise ValueError(f"Invalid date format: {value}. Use YYYY-MM-DD or 'YYYY-MM-DD HH:MM'")
