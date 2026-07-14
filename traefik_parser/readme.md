@@ -51,6 +51,33 @@ Parse each log line into a structured record containing:
 - filter flags (status, IP, path, time range)
 - flag to choose output format
 
+## Usage
+
+```bash
+# Show everything, pulling live from the cluster
+python main.py --show-all
+
+# Show top 20 IPs instead of default 10
+python main.py --show-top-ips --results-number 20
+
+# Analyze a saved log file instead of live cluster
+python main.py --from-file access.log --show-stats
+
+# Filter to a specific status code and print matching logs
+python main.py --status 500 --show-error-logs
+
+# Pull more lines and check top requested paths
+python main.py --lines 5000 --show-top-request-paths
+
+# Check stats for a specific IP address
+python main.py --ip 10.150.13.100 --show-top-ips
+
+# Custom namespace/labels when pulling from a different cluster setup
+python main.py --namespace default --labels app=my-ingress --show-all
+```
+
+Run `python main.py --help` for the full list of flags.
+
 ## Success criteria
 
 Feeding the tool a real production access log produces a report that would genuinely help during incident debugging/analysis.
@@ -66,8 +93,8 @@ Feeding the tool a real production access log produces a report that would genui
 ### Input
 
 - [x] ✅ Primary source: Traefik JSON access logs (pulled from K8s API)
-- [ ] ❌ Fallback: nginx/Traefik plain text (combined) format
-- [ ] ❌ Input file as positional argument (currently hardcoded to K8s API only)
+- [x] ✅ Input file support (`--from-file`), decoupled from K8s-only source
+- [ ] ❌ Fallback: nginx/Traefik plain text (combined) format — JSON-only parser for now
 
 ### 1. Parsing
 
@@ -84,17 +111,19 @@ Feeding the tool a real production access log produces a report that would genui
 
 ### 2. Filtering
 
-- [ ] ❌ By HTTP status (e.g. 5xx only) — as CLI option (currently hardcoded logic only)
+- [x] ✅ By HTTP status (`--status`)
+- [x] ✅ By IP address (`--ip`)
+- [x] ✅ By path (`--path`) — exact match only, not substring/regex yet
+- [x] ✅ By host (`--host`) — bonus, not in original MVP
 - [ ] ❌ By time range
-- [ ] ❌ By IP address
-- [ ] ❌ By path (substring / regex)
-- [x] ✅ *(bonus, not in original MVP)* Exclusion filters for noisy traffic (Rancher live-log streaming, `follow=true`, unreasonably long durations)
+- [x] ✅ Exclusion filters for noisy traffic (Rancher live-log streaming, `follow=true`, unreasonably long durations)
 
 ### 3. Statistics / Aggregations
 
-- [x] ✅ Top N IP addresses by request count
+- [x] ✅ Top N IP addresses by request count (N configurable via `--results-number`)
 - [x] ✅ Request count per status code
 - [x] ✅ Top N most requested endpoints
+- [x] ✅ Top N 5xx error codes
 - [x] ✅ Response time stats: average, median, p50/p95/p99 (global)
 - [ ] ❌ Slowest endpoints (per-path latency ranking, not just global stats)
 
@@ -105,36 +134,40 @@ Feeding the tool a real production access log produces a report that would genui
 
 ### 5. Output
 
-- [ ] ⚠️ Readable terminal output — present, but not a real aligned table with headers
+- [ ] ⚠️ Readable terminal output — present, aligned columns via `show_top_metrics`, but no real table headers
 - [ ] ❌ Export to CSV / JSON
 
 ### 6. CLI
 
-- [ ] ❌ Input file as positional argument
-- [ ] ❌ Filter flags (status, IP, path, time range)
-- [ ] ❌ Output format flag
-- [ ] ❌ `argparse` (or equivalent) — currently all params hardcoded in `main()`
+- [x] ✅ `argparse`-based CLI (`get_args.py`) — namespace, labels, lines, file input, all display/filter flags
+- [x] ✅ Filter flags (status, IP, path, host)
+- [x] ✅ `--show-all` convenience flag (sets all display flags at once)
+- [x] ✅ `--results-number` to control top-N size
+- [x] ✅ Help text with usage examples (`epilog`)
+- [ ] ❌ Time range filter flags
+- [ ] ❌ Output format flag (CSV/JSON)
+- [ ] ❌ Path filter as substring/regex (currently exact match)
 
 ### Summary
 
 | Area | Status |
 |---|---|
 | Core parsing (JSON) | 🟢 Done |
-| Aggregations | 🟢 Mostly done |
+| Aggregations | 🟢 Done |
 | Error handling | 🟢 Done |
-| Filtering (as CLI options) | 🔴 Not started (only hardcoded) |
-| CLI interface | 🔴 Not started |
+| CLI interface | 🟢 Done |
+| Filtering (as CLI options) | 🟢 Mostly done (status/IP/path/host done, time range missing) |
 | Export | 🔴 Not started |
 | Plain text fallback | 🔴 Not started |
+| Per-endpoint slowest ranking | 🔴 Not started |
 
-**Overall: solid working core (~45-50% of MVP), missing the CLI/filtering/export layer that turns it into the tool described above.**
+**Overall: ~75-80% of MVP. Core engine, aggregations, and full CLI are done. Remaining gaps: export, plain text fallback, time-range filtering, and per-endpoint latency ranking.**
 
 ### Next steps (priority order)
 
-1. File input support (`get_logs_from_file`) — decouple from K8s-only source
-2. `argparse` CLI skeleton
-3. Filter flags (status, IP, path, time range)
-4. Plain text log fallback parser
-5. Per-endpoint slowest-requests ranking
-6. CSV/JSON export
-7. Polish: `RouterName`, aligned table output
+1. Per-endpoint slowest-requests ranking (`{path: [durations]}` → avg/median per path)
+2. CSV/JSON export
+3. Time range filter flags (`--since` / `--until`)
+4. Path filter as substring/regex instead of exact match
+5. Plain text log fallback parser (nginx/Traefik combined format)
+6. Polish: `RouterName` field, real table headers in terminal output

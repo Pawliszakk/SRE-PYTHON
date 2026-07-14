@@ -1,7 +1,8 @@
 from utils import from_microseconds_to_seconds
 import statistics
 def show_duration(my_data):
-    
+    print('Statistics of request speed')
+    print('-----------------------')
     sorted_all_durations_values = sorted(my_data, reverse=True)
 
     average_duration = sum(sorted_all_durations_values)/len(sorted_all_durations_values)
