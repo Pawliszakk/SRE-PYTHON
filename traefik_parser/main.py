@@ -56,8 +56,6 @@ def main():
             if parsed_log["RequestAddr"] != args.host:
                 continue
 
-
-
         if args.show_stats:
             if ("follow=true" not in parsed_log["RequestPath"] # Follow requests case
                 and "rancher" not in parsed_log["RequestAddr"] # Rancher live logs fetching case

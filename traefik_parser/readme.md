@@ -23,8 +23,7 @@ Parse each log line into a structured record containing:
 - status code (`DownstreamStatus`)
 - response size (`DownstreamContentSize`)
 - duration (`Duration`, in **microseconds** — convert before computing percentiles)
-- router / service name (`RouterName`, `ServiceName`) — useful for aggregating by application (e.g. Nextcloud, JumpServer)
-- user-agent, if present (not guaranteed in Traefik's default JSON fields — treat as optional)
+- service name (`ServiceName`) — useful for aggregating by application (e.g. Nextcloud, JumpServer)
 
 ### 2. Filtering
 - by HTTP status (e.g. `5xx` only)
@@ -106,8 +105,6 @@ Feeding the tool a real production access log produces a report that would genui
 - [x] ✅ Response size (`DownstreamContentSize`)
 - [x] ✅ Duration (`Duration`)
 - [x] ✅ Service name (`ServiceName`)
-- [ ] ❌ Router name (`RouterName`) — not currently parsed
-- [ ] ❌ User-agent (optional field)
 
 ### 2. Filtering
 
@@ -170,4 +167,4 @@ Feeding the tool a real production access log produces a report that would genui
 3. Time range filter flags (`--since` / `--until`)
 4. Path filter as substring/regex instead of exact match
 5. Plain text log fallback parser (nginx/Traefik combined format)
-6. Polish: `RouterName` field, real table headers in terminal output
+6. Polish: real table headers in terminal output
