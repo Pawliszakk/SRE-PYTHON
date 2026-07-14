@@ -35,6 +35,7 @@ def get_args():
     )
 
     parser.add_argument('--from-file', type=str, help='A path to file with logs')
+    parser.add_argument('--output-dir', type=str, help='A path to directory where results should be stored')
     parser.add_argument('--namespace', type=str, help='Namespace where pods with http proxy are deployed in', default=default_namespace)
     parser.add_argument('--labels', type=str, help='Labels to pods where you want to get logs from', default=default_labels)
     parser.add_argument('--lines', type=int, help='How much lines from source do you want to parse', default=100)
