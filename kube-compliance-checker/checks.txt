@@ -1,0 +1,25 @@
+HIGH
+- privileged: true
+- hostNetwork / hostPID / hostIPC: true
+- capabilities.add poza Baseline
+- hostPath volume
+- QoS = BestEffort
+- brak requests.cpu / requests.memory
+- OOMKilled w lastState
+
+MEDIUM
+- runAsNonRoot != true
+- allowPrivilegeEscalation != false
+- capabilities.drop bez ALL
+- seccomp != RuntimeDefault
+- brak limits.memory
+- QoS = Burstable
+
+LOW
+- brak limits.cpu
+
+INFO
+- zużycie vs limit
+
+OK
+- QoS = Guaranteed
