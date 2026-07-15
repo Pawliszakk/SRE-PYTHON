@@ -182,9 +182,6 @@ def main():
         if args.ip:
             if len(custom_ip_logs) == 0:
                 print("We did not find any data for specified criteria.")
-            else:
-                for log in custom_ip_logs:
-                    print(f"IP: {log["ClientHost"]} {log["RequestAddr"]}{log["RequestPath"]} {log["DownstreamStatus"]}")
         
         if show_logs:
             for log in filtered_logs:
