@@ -1,0 +1,33 @@
+# PSS-Baseline — Pod Security Standards
+#   PSS-B-001  HIGH    privileged: true
+#   PSS-B-002  HIGH    hostNetwork / hostPID / hostIPC enabled
+#   PSS-B-003  HIGH    capabilities.add outside Baseline set
+#   PSS-B-004  HIGH    hostPath volume mounted
+
+# PSS-Restricted — Pod Security Standards
+#   PSS-R-001  MEDIUM  runAsNonRoot not true
+#   PSS-R-002  MEDIUM  allowPrivilegeEscalation not false
+#   PSS-R-003  MEDIUM  capabilities.drop missing ALL
+#   PSS-R-004  MEDIUM  seccomp profile not RuntimeDefault
+
+# Resources
+#   RES-001    HIGH    requests.cpu missing
+#   RES-002    HIGH    requests.memory missing
+#   RES-003    MEDIUM  limits.memory missing
+#   RES-004    LOW     limits.cpu missing
+
+# Runtime
+#   RT-001     HIGH    OOMKilled in lastState
+#   RT-002     INFO    current usage vs limit
+
+
+
+
+# 1. Sprawdzić czy jest requests
+# 1.1 S
+#
+#
+#
+#
+#
+#
