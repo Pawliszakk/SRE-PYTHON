@@ -21,7 +21,7 @@ python main.py --status 500 --show-error-logs
 python main.py --lines 5000 --show-top-request-paths
 
 # Check stats for a specific IP address
-python main.py --ip 10.150.13.100 --show-top-ips
+python main.py --ip 192.168.0.63 --show-top-ips
 
 # Custom namespace/labels when pulling from a different cluster setup
 python main.py --namespace default --labels app=my-ingress --show-all
@@ -45,7 +45,7 @@ python main.py --slower-than 10 --slower-than-show-path
 python main.py --host helpdesk-k8s.mw-wheels.com --show-error-logs
 
 # Combine IP and status filters to trace a specific incident
-python main.py --ip 172.20.15.10 --status 500 --show-error-logs
+python main.py --ip 192.168.0.52 --status 500 --show-error-logs
 
 # Check top error codes (4xx/5xx) with a bigger sample size
 python main.py --lines 20000 --show-top-error-codes
