@@ -17,6 +17,9 @@ MAX_REASONABLE_DURATION_SECONDS = 60
 MAX_REASONABLE_DURATION = MAX_REASONABLE_DURATION_SECONDS * 1_000_000
 
 def main():
+
+    
+
     args = get_args()
     log_count = 0
     bad_log_count = 0
@@ -31,6 +34,13 @@ def main():
     error_logs = []
     custom_ip_logs = []
     filtered_logs = []
+    show_logs = True
+    MODE_FLAGS = (
+        "show_top_ips", "show_top_status_codes", "show_top_error_codes",
+        "show_top_request_addr", "show_top_request_paths",
+        "show_stats", "show_error_logs", "show_slowest", "slower_than",
+    )
+
     if args.show_all:
         args.show_top_ips = True
         args.show_top_status_codes = True
@@ -39,6 +49,8 @@ def main():
         args.show_top_request_paths = True
         args.show_stats = True
         args.show_error_logs = True
+
+    show_logs = not any(getattr(args, f) for f in MODE_FLAGS)
 
 
     if args.from_file: 
@@ -82,28 +94,27 @@ def main():
                 and parsed_log["Duration"] < MAX_REASONABLE_DURATION): # Follow requests case + not normal requests that are bug probably
                     all_durations_values.append(parsed_log["Duration"])
         
-        elif args.show_error_logs:
+        if args.show_error_logs:
             if parsed_log["DownstreamStatus"] >= 500 and parsed_log["DownstreamStatus"] <=599:
                 error_logs.append(parsed_log)
         
-        elif args.ip:
-            if parsed_log["ClientHost"] == args.ip:
-                custom_ip_logs.append(parsed_log)
+        if args.ip:
+            custom_ip_logs.append(parsed_log)
 
 
-        elif args.show_top_ips:
+        if args.show_top_ips:
             count_by_occurence(parsed_log, "ClientHost", ip_hits)
-        elif  args.show_top_status_codes or args.show_top_error_codes:
+        if  args.show_top_status_codes or args.show_top_error_codes:
             count_by_occurence(parsed_log, "DownstreamStatus", statuses_count)
-        elif  args.show_top_request_addr:
+        if  args.show_top_request_addr:
             count_by_occurence(parsed_log, "RequestAddr", request_addr_count)
-        elif  args.show_top_request_paths:
+        if  args.show_top_request_paths:
             count_by_occurence(parsed_log, "RequestPath", request_path_count)
-        elif args.show_slowest:
+        if args.show_slowest:
             calculate_slowest_hosts(parsed_log, request_times)
-        elif args.slower_than:
+        if args.slower_than:
             show_slower_than(parsed_log,args.slower_than,args.slower_than_show_path)
-        else:
+        if show_logs:
             filtered_logs.append(parsed_log)
 
     if args.show_top_error_codes:
@@ -123,59 +134,59 @@ def main():
         if args.show_top_ips:
             generate_csv(ip_hits, args.results_number, args.output_dir,"top_ips")
 
-        elif  args.show_top_status_codes:
+        if  args.show_top_status_codes:
             generate_csv(statuses_count, args.results_number, args.output_dir,"top_status_codes")
 
-        elif  args.show_top_request_addr:
+        if  args.show_top_request_addr:
             generate_csv(request_addr_count, args.results_number, args.output_dir,"top_request_addr")
 
-        elif  args.show_top_request_paths:
+        if  args.show_top_request_paths:
             generate_csv(request_path_count, args.results_number, args.output_dir,"top_request_paths")
 
-        elif  args.show_stats:
+        if  args.show_stats:
             show_duration(all_durations_values,is_csv,args.output_dir)
         
-        elif  args.show_slowest:
+        if  args.show_slowest:
             show_slowest_hosts(request_times,is_csv, args.output_dir)
         
-        elif  args.show_error_logs:
+        if  args.show_error_logs:
             custom_name = "error_logs"
             save_logs_to_csv(error_logs,args.output_dir, args.results_number,custom_name)
         
-        elif  args.ip:
+        if  args.ip:
             custom_name = f"{args.ip}-logs"
             save_logs_to_csv(custom_ip_logs,args.output_dir, args.results_number,custom_name)
-        else:
+        if show_logs:
             custom_name = "filtered-logs"
             save_logs_to_csv(filtered_logs,args.output_dir, args.results_number,custom_name)
 
     else:
         if args.show_top_ips:
             show_top_metrics("IP hit counts...",ip_hits, args.results_number)
-        elif  args.show_top_status_codes:
+        if  args.show_top_status_codes:
             show_top_metrics("Status codes...",statuses_count, args.results_number)
-        elif  args.show_top_request_addr:
+        if  args.show_top_request_addr:
             show_top_metrics("Request addresses...",request_addr_count, args.results_number)
-        elif  args.show_top_request_paths:
+        if  args.show_top_request_paths:
             show_top_metrics("Request paths...",request_path_count, args.results_number)
-        elif args.show_stats:
+        if args.show_stats:
             show_duration(all_durations_values)
-        elif args.show_slowest:
+        if args.show_slowest:
             show_slowest_hosts(request_times)
-        elif args.show_error_logs:
+        if args.show_error_logs:
             if len(error_logs) == 0:
                 print("We did not find any data for specified criteria.")
             else:
                 for log in error_logs:
                     print(log)
-        elif args.ip:
+        if args.ip:
             if len(custom_ip_logs) == 0:
                 print("We did not find any data for specified criteria.")
             else:
                 for log in custom_ip_logs:
                     print(f"IP: {log["ClientHost"]} {log["RequestAddr"]}{log["RequestPath"]} {log["DownstreamStatus"]}")
         
-        else:
+        if show_logs:
             for log in filtered_logs:
                 print(log)
 
