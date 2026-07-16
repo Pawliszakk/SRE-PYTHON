@@ -10,8 +10,8 @@ def connect_to_k8s():
     client.Configuration.set_default(configuration)
 
     v1 = client.CoreV1Api()
-  
+    metrics_api = client.CustomObjectsApi()
 
-    return v1
+    return v1, metrics_api
   except Exception as e:
     print(e)
