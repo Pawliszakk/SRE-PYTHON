@@ -1,5 +1,5 @@
 import json
-from pprint import pprint
+import csv
 
 
 def show_findings(findings, args):
@@ -23,9 +23,23 @@ def show_findings(findings, args):
 
     if args.output == "json":
         print(json.dumps([vars(f) for f in filtered], indent=2))
+
     elif args.output == "yaml":
         import yaml
         print(yaml.dump([vars(f) for f in filtered], default_flow_style=False))
+    
+    elif args.output == "csv":
+        if not filtered:
+            print("No findings to write.")
+            return
+        fieldnames = vars(filtered[0]).keys()
+        with open(args.csv_path, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            for finding in filtered:
+                writer.writerow(vars(finding))
+        print(f"Wrote {len(filtered)} findings to {args.csv_path}")
+    
     else:  # human
         for finding in filtered:
             print(f"Pod: {finding.namespace}/{finding.pod}| Container: {finding.container} | {finding.severity} | {finding.message} ")

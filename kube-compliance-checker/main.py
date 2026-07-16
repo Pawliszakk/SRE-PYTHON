@@ -13,9 +13,6 @@ def main():
 
     args = get_args()
 
-    if args.ok or args.info or args.low or args.medium or args.high:
-        args.show_all = False
-
     findings = []
 
     v1, metrics_api = connect_to_k8s()
@@ -31,11 +28,6 @@ def main():
 
 
     show_findings(findings, args)
-
-
-        
-
-
 
     show_summary(findings, len(pods.items))
 

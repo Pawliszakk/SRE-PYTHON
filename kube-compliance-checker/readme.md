@@ -6,173 +6,101 @@ A CLI tool for auditing Kubernetes Pods against security and resource standards 
 
 Scan running Pods from the command line and report every compliance deviation, in a way that's genuinely useful when reviewing a cluster's security and resource posture.
 
-The goal is **not** to invent arbitrary rules. Checks are anchored in existing sources of truth (Kubernetes Pod Security Standards, QoS semantics, runtime facts), so results are defensible rather than opinionated. Conceptually it's *"OpenSCAP for Kubernetes Pods"*.
+The goal is **not** to invent arbitrary rules. Checks are anchored in existing sources of truth (Kubernetes Pod Security Standards, resource requests/limits semantics, runtime facts), so results are defensible rather than opinionated. Conceptually it's *"OpenSCAP for Kubernetes Pods"*.
 
-## Input
+## Examples
 
-- Primary source: live Pods pulled from a cluster via the Kubernetes Python client (`~/.kube/config`).
-- Fallback: static YAML/JSON manifests, for auditing before anything is applied (shift-left).
-- The scanner should support both, not just one — this mirrors real-world use where you want to catch issues both in the cluster and in CI before deploy.
+```bash
+# Scan a single namespace
+python main.py -n gitea
 
-## What we check in a Pod
+# Scan the whole cluster
+python main.py
 
-Severity legend: 🟢 OK · 🔵 LOW · 🟡 MEDIUM · 🔴 HIGH · ℹ️ INFO
+# Only the things that need attention today
+python main.py --high
 
-### Security (source: Pod Security Standards)
+# HIGH and MEDIUM together — severity filters are additive
+python main.py --high --medium
 
-| Check | Bad state | Severity |
-|-------|-----------|----------|
-| Privileged container | `privileged: true` | 🔴 HIGH |
-| Host namespaces | `hostNetwork` / `hostPID` / `hostIPC: true` | 🔴 HIGH |
-| Extra capabilities | `capabilities.add` outside Baseline set | 🔴 HIGH |
-| hostPath volume | `hostPath` mounted | 🔴 HIGH |
-| Runs as root | `runAsNonRoot` not `true` | 🟡 MEDIUM |
-| Privilege escalation | `allowPrivilegeEscalation` not `false` | 🟡 MEDIUM |
-| Capabilities not dropped | `capabilities.drop` missing `ALL` | 🟡 MEDIUM |
-| Seccomp | not `RuntimeDefault` | 🟡 MEDIUM |
+# Machine-readable output for piping into jq
+python main.py -n gitea -o json | jq '.[] | select(.rule_id == "RES-005")'
 
-### Resources (source: QoS semantics)
+# YAML, when you want to eyeball nested observed/expected values
+python main.py -n gitea -o yaml
 
-| Check | Bad state | Severity |
-|-------|-----------|----------|
-| QoS = BestEffort | no requests/limits at all | 🔴 HIGH |
-| Missing requests | no `requests.cpu` / `requests.memory` | 🔴 HIGH |
-| Missing memory limit | no `limits.memory` | 🟡 MEDIUM |
-| QoS = Burstable (partial) | some limit missing | 🟡 MEDIUM |
-| Missing CPU limit | no `limits.cpu` | 🔵 LOW |
-| QoS = Guaranteed | requests == limits | 🟢 OK |
+# Export everything to a spreadsheet
+python main.py -o csv --csv-path findings.csv
 
-### Runtime (source: containerStatuses / metrics-server)
+# Count violations by rule across the cluster
+python main.py -o json | jq -r '.[].rule_id' | sort | uniq -c | sort -rn
+```
 
-| Check | Bad state | Severity |
-|-------|-----------|----------|
-| OOMKilled before | `lastState.terminated.reason == OOMKilled` | 🔴 HIGH |
-| Current utilization | usage vs limit (snapshot) | ℹ️ INFO |
+## Implemented Rules
 
-## Features (MVP)
+Severity legend: 🟢 OK · ℹ️ INFO · 🔵 LOW · 🟡 MEDIUM · 🔴 HIGH
 
-### 1. Scanning
-Pull all (or selected) Pods and resolve each into a set of checks. Key gotchas handled:
-- `securityContext` exists at **Pod and container** level — compute the *effective* value (container overrides Pod), don't check one level blindly.
-- Iterate over `initContainers` and `ephemeralContainers`, not just `containers`.
-- Compute the resulting **QoS class** rather than eyeballing requests/limits.
+### PSS-Baseline — Pod Security Standards
 
-### 2. Filtering
-- by namespace (single / all)
-- by minimum severity (e.g. HIGH only)
-- by standard (`PSS-Baseline`, `PSS-Restricted`, `QoS`, `Runtime`)
+| Rule ID | Severity | Bad state |
+|---|---|---|
+| `PSS-B-001` | 🔴 HIGH | `privileged: true` |
+| `PSS-B-002` | 🔴 HIGH | `hostNetwork` / `hostPID` / `hostIPC` enabled |
+| `PSS-B-003` | 🔴 HIGH | `capabilities.add` outside the Baseline allowed set |
+| `PSS-B-004` | 🔴 HIGH | `hostPath` volume mounted |
 
-### 3. Findings
-Each deviation becomes a structured record:
-- namespace, pod, container (`null` for pod-level checks)
-- standard + `rule_id`
-- severity
-- observed vs. expected value
+### PSS-Restricted — Pod Security Standards
 
-### 4. Error handling
-- Pods with unexpected/partial specs don't crash the scan
-- a summary at the end shows how many objects were skipped and why
+| Rule ID | Severity | Bad state |
+|---|---|---|
+| `PSS-R-001` | 🟡 MEDIUM | `runAsNonRoot` not `true` |
+| `PSS-R-002` | 🟡 MEDIUM | `allowPrivilegeEscalation` not `false` |
+| `PSS-R-003` | 🟡 MEDIUM | `capabilities.drop` missing `ALL` |
+| `PSS-R-004` | 🟡 MEDIUM | seccomp profile not `RuntimeDefault` (`Localhost` accepted) |
 
-### 5. Output
-- readable table in the terminal
-- optional export to CSV / JSON
-- (phase 2) Prometheus exporter `/metrics` → Grafana + alerting
+`PSS-R-001` and `PSS-R-004` resolve the effective value — container-level `securityContext` overrides the Pod-level one. `PSS-R-002` and `PSS-R-003` are container-level only, since those fields do not exist in `PodSecurityContext`.
 
-### 6. CLI
-- namespace / all-namespaces flags
-- filter flags (severity, standard)
-- flag to choose output format
-- optional path to a manifest file instead of a live cluster
+### Resources
 
-## Success criteria
+| Rule ID | Severity | Bad state |
+|---|---|---|
+| `RES-001` | 🔴 HIGH | `requests.cpu` missing |
+| `RES-002` | 🔴 HIGH | `requests.memory` missing |
+| `RES-003` | 🟡 MEDIUM | `limits.memory` missing |
+| `RES-004` | 🔵 LOW | `limits.cpu` missing |
+| `RES-005` | 🔴 HIGH | both requests and limits missing |
+| `RES-006` | 🔴 HIGH | requests block missing |
+| `RES-007` | 🔴 HIGH | limits block missing |
 
-Running the tool against a real cluster produces a report that would genuinely help during a security/resource review — clear enough to hand to a team and act on.
+Rules are mutually exclusive by construction: `RES-005` short-circuits the rest, `RES-006`/`RES-007` fire only when the whole block is absent, and `RES-001`–`RES-004` fire only when the block exists but a field is missing.
 
-## Status
+### Runtime
 
-🚧 In progress — personal project, being built independently.
+| Rule ID | Severity | Bad state |
+|---|---|---|
+| `RT-001` | 🔴 HIGH | `lastState.terminated.reason == OOMKilled` |
+| `RT-002` | ℹ️ INFO | current usage vs configured limits (snapshot) |
 
----
+`RT-002` is skipped for Pods whose `status.phase` is not `Running` — completed Job/CronJob Pods have no metrics and would otherwise produce 404s.
 
-## Progress Checklist
+## Finding Structure
 
-### Input
+Every deviation is a structured record:
 
-- [ ] ❌ Live cluster scan (Kubernetes Python client)
-- [ ] ❌ Static manifest fallback (YAML/JSON file)
-- [ ] ❌ RBAC-minimal ServiceAccount for in-cluster use
-
-### 1. Scanning
-
-- [ ] ❌ List Pods across namespaces
-- [ ] ❌ Effective `securityContext` resolution (pod + container merge)
-- [ ] ❌ Cover `initContainers` / `ephemeralContainers`
-- [ ] ❌ QoS class computation
-
-### 2. Checks — Security (PSS)
-
-- [ ] ❌ Privileged / host namespaces / hostPath (Baseline)
-- [ ] ❌ Extra capabilities (Baseline)
-- [ ] ❌ runAsNonRoot / allowPrivilegeEscalation (Restricted)
-- [ ] ❌ capabilities.drop ALL / seccomp RuntimeDefault (Restricted)
-
-### 2. Checks — Resources
-
-- [ ] ❌ QoS class findings (BestEffort / Burstable / Guaranteed)
-- [ ] ❌ Missing requests / limits
-
-### 2. Checks — Runtime
-
-- [ ] ❌ OOMKilled history from containerStatuses
-- [ ] ❌ Current utilization (INFO, from metrics-server)
-
-### 3. Filtering
-
-- [ ] ❌ By namespace
-- [ ] ❌ By minimum severity
-- [ ] ❌ By standard
-
-### 4. Error Handling
-
-- [ ] ❌ Malformed / partial specs don't crash the scan
-- [ ] ❌ Summary of skipped objects
-
-### 5. Output
-
-- [ ] ❌ Readable terminal table
-- [ ] ❌ Export to CSV / JSON
-- [ ] ❌ Prometheus exporter `/metrics`
-
-### 6. CLI
-
-- [ ] ❌ `argparse` skeleton
-- [ ] ❌ Namespace / severity / standard flags
-- [ ] ❌ Output format flag
-- [ ] ❌ Manifest-file input mode
-
-### Summary
-
-| Area | Status |
+| Field | Description |
 |---|---|
-| Cluster scan | 🔴 Not started |
-| Security checks (PSS) | 🔴 Not started |
-| Resource checks (QoS) | 🔴 Not started |
-| Runtime checks | 🔴 Not started |
-| Filtering | 🔴 Not started |
-| CLI interface | 🔴 Not started |
-| Export | 🔴 Not started |
+| `namespace` | Pod namespace |
+| `pod` | Pod name |
+| `container` | Container name (empty for pod-level checks) |
+| `standard` | `PSS-Baseline`, `PSS-Restricted`, `Resources`, `Runtime` |
+| `rule_id` | Stable rule identifier |
+| `severity` | `OK` / `INFO` / `LOW` / `MEDIUM` / `HIGH` |
+| `observed` | Actual value found in the cluster |
+| `expected` | Compliant value |
+| `message` | Human-readable description |
 
-**Overall: greenfield — scope defined, implementation not yet started.**
+## Architecture Notes
 
-### Next steps (priority order)
-
-1. Kubernetes client wiring — list Pods across namespaces
-2. Effective `securityContext` + QoS resolution helpers
-3. First PSS Baseline rule end-to-end, with a `pytest` fixture
-4. Remaining PSS + resource rules as pure functions
-5. `argparse` CLI skeleton + JSON report
-6. Filter flags (severity, standard, namespace)
-7. Runtime checks (OOMKilled, utilization INFO)
-8. CSV/JSON export
-9. Prometheus exporter → Grafana dashboard
-10. Polish: manifest-file input, in-cluster CronJob deployment
+- **Metrics come from a different API group.** `CoreV1Api` serves `v1` (core) objects — Pod spec and status — but carries no live resource usage. Usage is served by `metrics.k8s.io/v1beta1`, provided by metrics-server via the API aggregation layer, and reached through `CustomObjectsApi`. This is the same endpoint `kubectl top pods` hits.
+- **`last_state` vs `state`.** `state` is the container's current state; `last_state` holds the previous termination and is only populated after a restart. `RT-001` reads `last_state` so an OOMKill is still caught after the container has come back up.
+- **Checks are pure functions.** Each `check_*` function takes a Pod and appends to a shared `findings` list. Adding a rule means adding a function and one call in `main.py`.
