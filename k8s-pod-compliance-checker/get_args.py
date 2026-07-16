@@ -1,16 +1,6 @@
 import argparse
 
 def get_args():
-    SYSTEM_NAMESPACES = {
-        "kube-system",
-        "kube-public",
-        "kube-node-lease",
-        "cattle-system",
-        "cattle-fleet-system",
-        "cattle-fleet-local-system",
-        "cattle-capi-system",
-        "cattle-impersonation-system",
-    }
 
     parser = argparse.ArgumentParser(description='Kube Compliance Checker - CLI Tool to check compliance of k8s cluster pods')
 
