@@ -1,6 +1,9 @@
 from models import Finding
 
 def check_runtime_usage(pod, metrics_api, findings):
+    if pod.status.phase != "Running":
+        return
+
     try:
         pod_metrics = metrics_api.get_namespaced_custom_object(
             group="metrics.k8s.io",
@@ -12,6 +15,7 @@ def check_runtime_usage(pod, metrics_api, findings):
     except Exception as e:
         print(e)
         return
+
     usage_by_container = {c["name"]: c["usage"] for c in pod_metrics["containers"]}
 
     for container in pod.spec.containers:

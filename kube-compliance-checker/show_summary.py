@@ -25,5 +25,7 @@ def show_summary(findings, pods_count):
             high_counter += 1
 
     print("\n")
+    print("SUMMARY")
+    print("--------------------------")
     print(f"PODS CHECKED: { pods_count }")
     print(f'OK: {ok_counter}, INFO: {info_counter}, LOW: {low_counter}, MEDIUM: {medium_counter}, HIGH: {high_counter}')

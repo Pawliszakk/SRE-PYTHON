@@ -7,11 +7,15 @@ from check_runtime_compliance import check_runtime_compliance
 from check_runtime_usage import check_runtime_usage
 from check_resources_compliance import check_resources_compliance
 from show_summary import show_summary
-from pprint import pprint
+from show_findings import show_findings
+
 def main():
 
     args = get_args()
-    
+
+    if args.ok or args.info or args.low or args.medium or args.high:
+        args.show_all = False
+
     findings = []
 
     v1, metrics_api = connect_to_k8s()
@@ -25,9 +29,13 @@ def main():
         check_baseline_security_compliance(pod,findings)
         check_restricted_security_compliance(pod,findings)
 
-    for finding in findings:
-        pprint(vars(finding))
-        print("\n")
+
+    show_findings(findings, args)
+
+
+        
+
+
 
     show_summary(findings, len(pods.items))
 
