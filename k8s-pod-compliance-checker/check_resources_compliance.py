@@ -1,6 +1,9 @@
 from models import Finding
 
 def check_resources_compliance(pod,findings):
+    if pod.status.phase != "Running":
+        return
+    
     for container in pod.spec.containers:
         requests = container.resources.requests
         limits = container.resources.limits

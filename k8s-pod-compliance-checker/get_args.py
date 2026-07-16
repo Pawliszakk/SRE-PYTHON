@@ -9,6 +9,10 @@ def get_args():
     parser.add_argument('--low', action='store_true', help='Show only low severity findings')
     parser.add_argument('--medium', action='store_true', help='Show only medium severity findings')
     parser.add_argument('--high', action='store_true', help='Show only high severity findings')
+    parser.add_argument('--baseline', action='store_true', help='Show only PSS-Baseline findings')
+    parser.add_argument('--restricted', action='store_true', help='Show only PSS-Restricted findings')
+    parser.add_argument('--resources', action='store_true', help='Show only Resources findings')
+    parser.add_argument('--runtime', action='store_true', help='Show only Runtime findings')
     parser.add_argument(
         '-o', '--output',
         choices=['human', 'json', 'yaml', 'csv'],

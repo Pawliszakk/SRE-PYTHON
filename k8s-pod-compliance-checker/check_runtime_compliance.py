@@ -1,6 +1,8 @@
 from models import Finding
 
 def check_runtime_compliance(pod, findings):
+    if pod.status.phase != "Running":
+        return
 
     for status in pod.status.container_statuses:
 

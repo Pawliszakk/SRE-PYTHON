@@ -8,7 +8,8 @@ BASELINE_ALLOWED_CAPABILITIES = {
 
 
 def check_baseline_security_compliance(pod, findings):
-
+    if pod.status.phase != "Running":
+        return
     # PSS-B-002: hostNetwork / hostPID / hostIPC
     if pod.spec.host_network or pod.spec.host_pid or pod.spec.host_ipc:
         finding = Finding(

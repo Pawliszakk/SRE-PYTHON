@@ -20,16 +20,16 @@ def main():
     pods = get_pods(v1,args.namespace)
 
     for pod in pods.items:
+
         check_resources_compliance(pod, findings)
         check_runtime_compliance(pod,findings)
         check_runtime_usage(pod,metrics_api,findings)
         check_baseline_security_compliance(pod,findings)
         check_restricted_security_compliance(pod,findings)
 
+    filtered_findings = show_findings(findings, args)
 
-    show_findings(findings, args)
-
-    show_summary(findings, len(pods.items))
+    show_summary(filtered_findings, len(pods.items))
 
 
 
