@@ -22,7 +22,7 @@ SYSTEM_NAMESPACES = {
 }
 
 
-def show_findings(findings, args):
+def filter_findings(findings, args):
     filtered = findings
 
     if not args.include_system and not args.namespace:
@@ -55,6 +55,12 @@ def show_findings(findings, args):
             allowed_standards.add("Runtime")
 
         filtered = [f for f in filtered if f.standard in allowed_standards]
+
+    return filtered
+
+
+def show_findings(findings, args):
+    filtered = filter_findings(findings, args)
 
     if args.output == "json":
         print(json.dumps([vars(f) for f in filtered], indent=2))

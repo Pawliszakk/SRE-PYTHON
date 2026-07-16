@@ -3,7 +3,7 @@ from models import Finding
 def check_restricted_security_compliance(pod, findings):
     if pod.status.phase != "Running":
         return
-    
+
     pod_security_context = pod.spec.security_context
 
     for container in pod.spec.containers:
@@ -27,6 +27,27 @@ def check_restricted_security_compliance(pod, findings):
                 {"runAsNonRoot": run_as_non_root},
                 {"runAsNonRoot": True},
                 "runAsNonRoot is not set to true"
+            )
+            findings.append(finding)
+
+        # PSS-R-005: runAsUser explicitly set to 0 (root)
+        run_as_user = None
+        if security_context and security_context.run_as_user is not None:
+            run_as_user = security_context.run_as_user
+        elif pod_security_context and pod_security_context.run_as_user is not None:
+            run_as_user = pod_security_context.run_as_user
+
+        if run_as_user == 0:
+            finding = Finding(
+                pod.metadata.namespace,
+                pod.metadata.name,
+                container.name,
+                "PSS-Restricted",
+                "PSS-R-005",
+                "HIGH",
+                {"runAsUser": 0},
+                {"runAsUser": "non-zero UID"},
+                "Container explicitly runs as root (UID 0)"
             )
             findings.append(finding)
 
