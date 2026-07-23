@@ -1,50 +1,73 @@
-# k8s-image-drift-checker
+# k8s-outdated-images-checker
 
-CLI that scans workloads in RKE2 cluster, checks image tags against registry via skopeo, reports outdated ones.
+Scans the containers actually running in your cluster and tells you which ones are
+behind the latest tag available in the registry.
 
-## Steps
+## What it does
 
-1. **Scaffold**
-   - `pyproject.toml`, `src/` layout, venv
-   - `cli.py` with argparse: `--namespace`, `--label-selector`, `--output text|json`
+- Connects to your cluster using your local kubeconfig (same as `kubectl`).
+- Walks every pod (or just one namespace) and collects the unique container images in use.
+- Skips `rancher` system images automatically.
+- For each image, asks the registry (via `skopeo`) for all available tags and figures out
+  the newest one — matching `1.2.3`, `v1.2.3`, and variant-suffixed tags like `1.25-alpine`
+  or `16.11.0-ce.0` correctly (it won't compare a `-ce` image against an `-ee` or plain tag).
+- Compares the **image digest** you're running against the digest of the newest tag — not
+  just the tag string — so it still catches drift even if a tag like `latest` or `stable`
+  got silently re-pushed.
+- Prints a clear status per image so you can scan the output at a glance.
 
-2. **K8s client** (`k8s_client.py`)
-   - Reuse auth pattern from `kube-compliance-checker`
-   - List Deployment/StatefulSet/DaemonSet
-   - Extract `namespace`, `workload name`, `kind`, `image` per container
-   - Split image → `registry`, `repo`, `tag`
+## Requirements
 
-3. **Models** (`models.py`)
-   - `ImageRef(registry, repo, tag)`
-   - `ImageCheckResult(image_ref, latest_tag, status, namespace, workload, kind)`
-   - status: `up_to_date | outdated | skipped | error`
+- Python 3.10+
+- [`skopeo`](https://github.com/containers/skopeo) installed and on your `PATH`
+- `pip install kubernetes packaging`
+- A working kubeconfig (`~/.kube/config` or `$KUBECONFIG`) pointing at your cluster
 
-4. **Skopeo wrapper** (`skopeo_client.py`)
-   - `subprocess.run(["skopeo", "list-tags", f"docker://{registry}/{repo}"], timeout=X, capture_output=True)`
-   - parse JSON output
-   - add retry + backoff
-   - handle errors: timeout, auth fail, repo not found
+## Usage
 
-5. **Version compare** (`version_compare.py`)
-   - try parse tags with `packaging.version.Version`
-   - not semver (`latest`, sha, date) → `skipped`
-   - semver → compare, set `outdated`/`up_to_date`
+Check every namespace in the cluster:
 
-6. **Report** (`report.py`)
-   - text: table (namespace, workload, image, current→latest, status)
-   - json: full dump, non-zero exit code if any `outdated`
+```bash
+python main.py
+```
 
-7. **Tests**
-   - `test_version_compare.py` — priority, most edge cases (v-prefix, pre-release, build metadata)
-   - mock K8s API + mock subprocess for skopeo, no live calls in unit tests
+Check just one namespace:
 
-8. **Wire together, run end-to-end**
+```bash
+python main.py -n production
+# or
+python main.py --namespace production
+```
 
-## Build order
+## Example output
 
-1. CLI skeleton + hardcoded fake data, no K8s/skopeo yet — get flow working
-2. K8s client — real cluster data, just print image list
-3. Skopeo wrapper — test manually against 1-2 images
-4. Version compare — with tests
-5. Wire full pipeline + report
-6. pytest coverage
+```text
+$ python main.py -n monitoring
+Processing prom/prometheus:v2.48.0, searching for newest container...
+INFO | Found newest version of prom/prometheus:v2.48.0 -> prom/prometheus:v2.53.1
+Processing grafana/grafana:10.2.0, searching for newest container...
+OK | grafana/grafana:10.2.0 is already latest image.
+Processing gitlab/gitlab-ce:16.9.0-ce.0, searching for newest container...
+INFO | Found newest version of gitlab/gitlab-ce:16.9.0-ce.0 -> gitlab/gitlab-ce:16.11.0-ce.0
+Processing myregistry:5000/internal/tool:1.4.2, searching for newest container...
+WARN | Could not resolve digest for myregistry:5000/internal/tool:1.4.2, skipping comparison
+```
+
+Each line tells you exactly what happened:
+
+| Prefix | Meaning |
+|---|---|
+| `OK`   | Image is already on the latest available tag/digest. |
+| `INFO` | A newer image is available — the message shows exactly what to bump to. |
+| `WARN` | Couldn't compare (registry unreachable, no comparable tag, or digest lookup failed) — nothing is assumed either way. |
+
+## A few things it handles for you
+
+- **Registries with a port**, e.g. `myregistry:5000/team/app:1.2.3` — parsed correctly instead
+  of confusing the port for a tag.
+- **Pinned-by-digest images**, e.g. `nginx@sha256:abcd...` — compared directly by digest
+  instead of trying to guess a tag.
+- **Pre-release tags** (`2.10.0-rc1`, `2.10.0-alpha`) are ignored when picking "latest" unless
+  they're what you're currently running.
+- **Variant suffixes** (`-ce`, `-ee`, `-alpine`, etc.) are treated as a distinct track, so you
+  only ever get suggested an upgrade within the same variant you're already using.
