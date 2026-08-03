@@ -5,3 +5,5 @@
 4.Sprawdź czy wszystkie węzły RKE2 są Ready
 5.Wyślij powiadomienie na Teams/Slack jeśli coś z powyższych padnie
 6.Sprawdź czy certy SSL nie wygasają za <30 dni
+
+
