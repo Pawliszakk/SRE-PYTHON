@@ -51,7 +51,7 @@ Processing gitlab/gitlab-ce:16.9.0-ce.0, searching for newest container...
 INFO | Found newest version of gitlab/gitlab-ce:16.9.0-ce.0 -> gitlab/gitlab-ce:16.11.0-ce.0
 Processing myregistry:5000/internal/tool:1.4.2, searching for newest container...
 WARN | Could not resolve digest for myregistry:5000/internal/tool:1.4.2, skipping comparison
-```
+
 
 Each line tells you exactly what happened:
 
